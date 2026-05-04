@@ -1,6 +1,6 @@
 # LovableFullStack 🚀
 
-AI-powered SaaS platform where users generate full React apps from natural-language prompts via real-time LLM streaming (SSE). Each project runs in an isolated Kubernetes pod (Vite + MinIO syncer sidecar), routed via a Node.js reverse proxy using Redis. Includes JWT + RBAC, Stripe webhook subscriptions, token quota tracking, and pgvector AI context injection.
+An AI-powered SaaS platform built with Spring Boot and React that lets users generate complete, deployable web applications from natural language prompts. Leverages Spring AI for real-time LLM response streaming, Kubernetes with Fabric8 for isolated per-tenant Vite dev environments, MinIO for file persistence, and a custom Redis-backed reverse proxy for instant live previews — with Stripe-powered subscriptions and token-based usage quotas for full multi-tenant SaaS lifecycle management.
 
 ## Tech Stack
 | Layer | Tech |
