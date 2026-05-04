@@ -29,3 +29,4 @@ An AI-powered SaaS platform built with Spring Boot and React that lets users gen
 
  <img width="1918" height="1028" alt="Screenshot 2026-05-04 123520" src="https://github.com/user-attachments/assets/d260445a-5e72-499e-9905-108cf8039a2d" />
  
+<img width="1914" height="966" alt="Screenshot 2026-05-04 124749" src="https://github.com/user-attachments/assets/e15fc293-ce87-4af4-800c-c26d7354704c" />
