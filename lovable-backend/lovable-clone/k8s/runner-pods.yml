@@ -1,0 +1,94 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: runner-pool
+  namespace: shuttle-apps
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: runner
+      status: idle
+  template:
+    metadata:
+      labels:
+        app: runner
+        status: idle
+    spec:
+      volumes:
+        - name: workspace
+          emptyDir: {}
+        - name: pnpm-store
+          hostPath:
+            path: /mnt/pnpm-store
+            type: DirectoryOrCreate
+        - name: podinfo
+          downwardAPI:
+            items:
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
+
+      containers:
+        - name: runner
+          image: node:20-alpine
+          workingDir: /app
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Waiting for sync..."
+              while [ ! -f /app/.sync_ready ]; do sleep 2; done
+
+              echo "Installing dependencies..."
+              cd /app && rm -rf node_modules package-lock.json && npm install
+
+              echo "Starting dev server..."
+              cd /app && node_modules/.bin/vite --host 0.0.0.0 --port 5173
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /app
+            - name: pnpm-store
+              mountPath: /root/.local/share/pnpm
+          ports:
+            - containerPort: 5173
+          resources:
+            limits:
+              memory: "1Gi"
+
+        - name: syncer
+          image: minio/mc
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting syncer..."
+
+              until mc alias set myminio http://minio-service:9000 minioadmin minioadmin123; do
+                echo "Waiting for MinIO..."
+                sleep 3
+              done
+
+              while true; do
+                PROJECT_ID=$(while IFS='=' read key val; do if [ "$key" = "project-id" ]; then echo $val | tr -d '"'; fi; done < /etc/podinfo/labels 2>/dev/null)
+                echo "PROJECT_ID=$PROJECT_ID"
+
+                if [ -z "$PROJECT_ID" ]; then
+                  echo "No project ID found, waiting..."
+                  sleep 5
+                  continue
+                fi
+
+                echo "Syncing project ${PROJECT_ID}..."
+                mc mirror --overwrite --remove --exclude "node_modules/*" myminio/projects/${PROJECT_ID} /app
+                echo "Sync complete"
+                touch /app/.sync_ready
+                sleep 5
+              done
+
+          volumeMounts:
+            - name: workspace
+              mountPath: /app
+            - name: podinfo
+              mountPath: /etc/podinfo
